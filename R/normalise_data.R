@@ -140,7 +140,7 @@ normalise_data = function(physeq = without_mock_physeq,
     joined_pstibble_fcm_norm =
       joined_pstibble_fcm %>%
       rowwise() %>%
-      mutate(cells_per_ml = cells_per_ml / sample_volume_ml) %>%
+      #mutate(cells_per_ml = cells_per_ml / sample_volume_ml) %>%
       mutate(norm_abund = ceiling(Abundance * cells_per_ml)) %>%
       select(OTU, norm_abund, SampleID)
 

@@ -98,8 +98,7 @@ rarefying = function(physeq = physeq,
     psdata_fcm <- prune_taxa(rowSums(otu_table(psdata_fcm)) > 0, psdata_fcm)  # Remove taxa with zero counts across all samples
 
     # convert phyloseq to data frame and calculate cells per ml in the sample
-    sample_data = data.frame(sample_data(psdata_fcm)) %>%
-      mutate(cells_per_ml = cells_per_ml / sample_volume_ml)
+    sample_data = data.frame(sample_data(psdata_fcm))
 
     # convert otu table to matrix
     ps_matrix = as(t(otu_table(psdata_fcm)), "matrix")
@@ -164,8 +163,6 @@ rarefying = function(physeq = physeq,
 
     psdata_anna16 = physeq[["psdata_asv_anna16_corrected"]]
     psdata_qpcr = physeq[["psdata_asv_qpcr_norm"]]
-
-    #psdata_qpcr = readRDS("/Users/stijnteunissen/Documents/Wetsus/Data_analysis/Projects/MGAD/MGAD_proj1_merged/output_data/rds_files/MGAD_proj1_merged_phyloseq_asv_level_qpcr_normalised_celL_concentration.rds")
 
     psdata_qpcr <- prune_samples(sample_sums(psdata_qpcr) > 0, psdata_qpcr)        # Remove samples with zero counts
     psdata_qpcr <- prune_taxa(rowSums(otu_table(psdata_qpcr)) > 0, psdata_qpcr)
