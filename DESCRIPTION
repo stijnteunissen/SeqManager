@@ -1,0 +1,9 @@
+Package: SeqManager
+Type: Package
+Title: Automatisation of microbiome analysis
+Version: 0.0.1
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
+Encoding: UTF-8
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
