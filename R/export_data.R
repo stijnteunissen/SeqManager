@@ -1,6 +1,9 @@
 #' Export Project Data to a Zip Archive
 #'
-#' This function exports project-related figures and output data by creating a dedicated export folder within the project directory. It organizes the export folder into subdirectories for figures, CSV files, and RDS files, copies the relevant files from their original locations, and finally compresses the export folder into a zip archive.
+#' This function exports project-related figures and output data by creating a dedicated export folder
+#' within the project directory. It organizes the export folder into subdirectories for figures, CSV files,
+#' and RDS files, copies the relevant files from their original locations, and finally compresses the export
+#' folder into a zip archive containing only relative file paths.
 #'
 #' @details
 #' The function performs the following steps:
@@ -24,82 +27,81 @@
 #'
 #' @export
 export_data <- function() {
+  # Check that the required global variables exist
+  if (!exists("base_path") || !exists("projects")) {
+    stop("Ensure that 'base_path' and 'projects' are defined.")
+  }
 
-  project_name = projects
-  project_folder = paste0(base_path, project_name)
-  figure_folder = paste0(project_folder, "/figures/")
-  output_folder = paste0(project_folder, "/output_data/")
-  output_folder_csv_files = paste0(project_folder, "/output_data/csv_files/")
-  output_folder_rds_files = paste0(project_folder, "/output_data/rds_files/")
+  project_name <- projects
+  project_folder <- paste0(base_path, project_name)
+  figure_folder <- file.path(project_folder, "figures")
+  output_folder <- file.path(project_folder, "output_data")
+  output_folder_csv_files <- file.path(output_folder, "csv_files")
+  output_folder_rds_files <- file.path(output_folder, "rds_files")
 
-  # create export folder
-  if(!dir.exists(paste0(project_folder, "/export_data_", project_name))){dir.create(paste0(project_folder, "/export_data_", project_name))}
+  # Create the export folder
+  export_folder <- file.path(project_folder, paste0("export_data_", project_name))
+  if (!dir.exists(export_folder)) {
+    dir.create(export_folder, recursive = TRUE)
+  }
 
-  # path to export folder
-  export_folder = paste0(project_folder, "/export_data_", project_name)
+  # Create subdirectories within the export folder
+  export_figures <- file.path(export_folder, "figures")
+  export_csv_output_folder <- file.path(export_folder, "output_data", "csv_files")
+  export_rds_output_folder <- file.path(export_folder, "output_data", "rds_files")
 
-  # create sub folders in export folder and path to sub folders
-  if(!dir.exists(paste0(export_folder, "/figures"))){dir.create(paste0(export_folder, "/figures"))}
-  if(!dir.exists(paste0(export_folder, "/output_data"))){dir.create(paste0(export_folder, "/output_data"))}
-  if(!dir.exists(paste0(export_folder, "/output_data/csv_files"))){dir.create(paste0(export_folder, "/output_data/csv_files"))}
-  if(!dir.exists(paste0(export_folder, "/output_data/rds_files"))){dir.create(paste0(export_folder, "/output_data/rds_files"))}
+  if (!dir.exists(export_figures)) {
+    dir.create(export_figures, recursive = TRUE)
+  }
+  if (!dir.exists(export_csv_output_folder)) {
+    dir.create(export_csv_output_folder, recursive = TRUE)
+  }
+  if (!dir.exists(export_rds_output_folder)) {
+    dir.create(export_rds_output_folder, recursive = TRUE)
+  }
 
-  export_figures = paste0(export_folder, "/figures/")
-  export_output_folder = paste0(export_folder, "/output_data/")
-  export_csv_output_folder = paste0(export_folder, "/output_data/csv_files/")
-  export_rds_output_folder = paste0(export_folder, "/output_data/rds_files/")
-
-  # copy figures naar export folder
+  # Copy figures to the export folder
   if (dir.exists(figure_folder)) {
     file.copy(from = list.files(figure_folder, full.names = TRUE),
               to = export_figures, recursive = TRUE, overwrite = TRUE)
   }
 
-  # Copy the entire CSV output folder to the export folder
+  # Copy CSV files to the export folder
   if (dir.exists(output_folder_csv_files)) {
     file.copy(from = list.files(output_folder_csv_files, full.names = TRUE),
-              to = export_csv_output_folder,
-              recursive = TRUE,
-              overwrite = TRUE)
+              to = export_csv_output_folder, recursive = TRUE, overwrite = TRUE)
   }
 
-  # Copy only the "After_cleaning_rds_files" folder from the RDS output folder.
+  # Copy RDS files from the "After_cleaning_rds_files" folder
   after_cleaning_folder <- file.path(output_folder_rds_files, "After_cleaning_rds_files")
   if (dir.exists(after_cleaning_folder)) {
     file.copy(from = list.files(after_cleaning_folder, full.names = TRUE),
-              to = export_rds_output_folder,
-              recursive = TRUE,
-              overwrite = TRUE)
+              to = export_rds_output_folder, recursive = TRUE, overwrite = TRUE)
   }
 
-  # # Define RDS files and copy them
-  # rds_files <- c(
-  #   paste0(output_folder_rds_files, project_name, "_phyloseq_asv_level_anna16_corrected_counts.rds"),
-  #   paste0(output_folder_rds_files, project_name, "_phyloseq_asv_level_fcm_normalised_cell_concentration_rarefied.rds"),
-  #   paste0(output_folder_rds_files, project_name, "_phyloseq_asv_level_qpcr_normalised_celL_concentration_rarefied.rds")
-  # )
-  #
-  # # Copy RDS files if they exist
-  # for (rds_file in rds_files) {
-  #   if (file.exists(rds_file)) {
-  #     file.copy(rds_file, export_rds_output_folder, overwrite = TRUE)
-  #   }
-  # }
-
-  # # zip export folder
-  # zip_file <- paste0(export_folder, ".zip")
-  # files_to_zip <- list.files(export_folder, full.names = TRUE, recursive = TRUE)
-  # zip(zipfile = zip_file, files = files_to_zip)
-
-  # Zip the export folder but include only the relative paths.
+  # Zip the export folder contents using relative paths.
   # Save the current working directory.
   old_wd <- getwd()
+  on.exit(setwd(old_wd))  # Ensure the old working directory is restored even if an error occurs.
+
   # Change working directory to the export folder so that only its contents are zipped.
   setwd(export_folder)
+
   files_to_zip <- list.files(".", recursive = TRUE)
   zip_file <- paste0(export_folder, "_data.zip")
-  zip(zipfile = zip_file, files = files_to_zip)
-  # Reset working directory.
-  setwd(old_wd)
 
+  # Check that the zip_file path is not empty.
+  if (nchar(zip_file) == 0) {
+    stop("The zip file path is empty!")
+  }
+
+  # Warn if no files were found to zip.
+  if (length(files_to_zip) == 0) {
+    warning("No files found in the export folder to zip.")
+  }
+
+  # Create the zip archive.
+  utils::zip(zipfile = zip_file, files = files_to_zip)
+
+  message("Export completed! Zip file created: ", zip_file)
 }
