@@ -79,6 +79,7 @@ export_data <- function() {
               to = export_rds_output_folder, recursive = TRUE, overwrite = TRUE)
   }
 
+
   # # Zip the export folder contents using relative paths.
   # # Save the current working directory.
   # old_wd <- getwd()
