@@ -79,29 +79,29 @@ export_data <- function() {
               to = export_rds_output_folder, recursive = TRUE, overwrite = TRUE)
   }
 
-  # Zip the export folder contents using relative paths.
-  # Save the current working directory.
-  old_wd <- getwd()
-  on.exit(setwd(old_wd))  # Ensure the old working directory is restored even if an error occurs.
-
-  # Change working directory to the export folder so that only its contents are zipped.
-  setwd(export_folder)
-
-  files_to_zip <- list.files(".", recursive = TRUE)
-  zip_file <- paste0(export_folder, "_data.zip")
-
-  # Check that the zip_file path is not empty.
-  if (nchar(zip_file) == 0) {
-    stop("The zip file path is empty!")
-  }
-
-  # Warn if no files were found to zip.
-  if (length(files_to_zip) == 0) {
-    warning("No files found in the export folder to zip.")
-  }
-
-  # Create the zip archive.
-  utils::zip(zipfile = zip_file, files = files_to_zip)
-
-  message("Export completed! Zip file created: ", zip_file)
+  # # Zip the export folder contents using relative paths.
+  # # Save the current working directory.
+  # old_wd <- getwd()
+  # on.exit(setwd(old_wd))  # Ensure the old working directory is restored even if an error occurs.
+  #
+  # # Change working directory to the export folder so that only its contents are zipped.
+  # setwd(export_folder)
+  #
+  # files_to_zip <- list.files(".", recursive = TRUE)
+  # zip_file <- paste0(export_folder, "_data.zip")
+  #
+  # # Check that the zip_file path is not empty.
+  # if (nchar(zip_file) == 0) {
+  #   stop("The zip file path is empty!")
+  # }
+  #
+  # # Warn if no files were found to zip.
+  # if (length(files_to_zip) == 0) {
+  #   warning("No files found in the export folder to zip.")
+  # }
+  #
+  # # Create the zip archive.
+  # utils::zip(zipfile = zip_file, files = files_to_zip)
+  #
+  # message("Export completed! Zip file created: ", zip_file)
 }
