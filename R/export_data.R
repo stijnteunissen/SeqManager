@@ -97,7 +97,7 @@ export_data <- function() {
   # Change working directory to the export folder so that only its contents are zipped.
   setwd(export_folder)
   files_to_zip <- list.files(".", recursive = TRUE)
-  zip_file <- paste0(export_folder, ".zip")
+  zip_file <- paste0(export_folder, "_data.zip")
   zip(zipfile = zip_file, files = files_to_zip)
   # Reset working directory.
   setwd(old_wd)
