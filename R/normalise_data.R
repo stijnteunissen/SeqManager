@@ -26,7 +26,7 @@
 #'    - This prediction enables the calculation of cell equivalents by adjusting for variablility in 16S rRNA gene copy numbers across taxa.
 #'
 #' 2. **FCM Normalization (`norm_method = "fcm"`):**
-#'    - Combine sample metadata (e.g., `cells_per_ml`, `sample_volume_ml`) with corrected abundances.
+#'    - Combine sample metadata (e.g., `cells_per_ml`) with corrected abundances.
 #'    - Calculate absolute abundances as `cells_per_ml_sample` and adjust ASV abundances accordingly.
 #'
 #' 3. **qPCR Normalization (`norm_method = "qpcr"`):**
