@@ -319,8 +319,6 @@ beta_diversity <- function(physeq = physeq,
         log_message(paste("Absolute beta diversity RNA plot saved:", figure_file_path), log_file)
       }
     }
-    return(list(combined_plot_relative_dna = combined_plot_relative_dna, combined_plot_relative_rna = combined_plot_relative_rna,
-                plot_man_dna = plot_man_dna, plot_man_rna = plot_man_rna))
   } else {
     for (tax in taxrank) {
       log_message(paste("Processing taxonomic level:", tax), log_file)
