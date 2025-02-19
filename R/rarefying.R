@@ -61,6 +61,7 @@ rarefying = function(physeq = physeq,
   project_name = projects
 
   project_folder = paste0(base_path, project_name)
+  figure_folder = paste0(project_folder, "/figures/")
   output_folder_csv_files = paste0(project_folder, "/output_data/csv_files/")
   output_folder_rds_files = paste0(project_folder, "/output_data/rds_files/After_cleaning_rds_files/")
   output_asv_rds_files = paste0(output_folder_rds_files, "ASV/")
