@@ -6,26 +6,26 @@
 #'
 #' @param physeq A list containing the `phyloseq` objects. Required components:
 #'               \itemize{
-#'               \item `psdata_asv_anna16_corrected`: With anna16 corrected phyloseq data.
+#'               \item `psdata_asv_copy_number_corrected`: With copy number corrected phyloseq data.
 #'               \item `psdata_asv_fcm_norm`: Required if `norm_method` = "fcm".
 #'               \item `psdata_asv_qpcr_norm`: Required if `norm_method` = "qpcr".
 #'               }
 #'
 #' @param norm_method A string specifying the normalization method. Acceptable values:
 #'                    \itemize{
-#'                    \item `NULL`: Returns the `psdata_asv_anna16_corrected` object without modifications.
+#'                    \item `NULL`: Returns the `psdata_asv_copy_number_corrected` object without modifications.
 #'                    \item `"fcm"`: Rarefied data using FCM normalized.
 #'                    \item `"qpcr"`: Rarefied data using qPCR normalized.
 #'                    }
 #'
 #' @details
 #' - For `"fcm"` normalization:
-#'   - Rarefies only the `fcm` normalized data, while the `anna16 corrected` data remains unchanged.
+#'   - Rarefies only the `fcm` normalized data, while the `copy number corrected` data remains unchanged.
 #'   - Rarefies based on the calculated sampling depth, derived from the ratio of total reads per sample to the
 #'     estimated cell counts.
 #'   - Uses a custom function (`avgrarefy`) to perform multiple iterations of rarefaction and averages the results.
 #' - For `"qpcr"` normalization:
-#'   - Rarefies only the `qpcr` normalized data, while the `anna16 corrected` data remains unchanged.
+#'   - Rarefies only the `qpcr` normalized data, while the `copy number corrected` data remains unchanged.
 #'   - Rarefies based on the calculated sampling depth, derived from the ratio of total reads per sample to
 #'     predicted 16S rRNA gene copy numbers.
 #'   - Uses the same `avgrarefy` function for averaging rarefied counts.
@@ -85,14 +85,14 @@ rarefying = function(physeq = physeq,
   }
 
   if (is.null(norm_method)) {
-    psdata = physeq[["psdata_asv_anna16_corrected"]]
+    psdata = physeq[["psdata_asv_copy_number_corrected"]]
 
     log_message(paste("Message: Normalization method is NULL. Returning unchanged phyloseq object."), log_file)
 
-    return(psdata_asv_anna16_corrected = psdata)
+    return(psdata_asv_copy_number_corrected = psdata)
 
   } else if (norm_method == "fcm") {
-    psdata = physeq[["psdata_asv_anna16_corrected"]]
+    psdata = physeq[["psdata_asv_copy_number_corrected"]]
     psdata_fcm = physeq[["psdata_asv_fcm_norm"]]
 
     psdata_fcm <- prune_samples(sample_sums(psdata_fcm) > 0, psdata_fcm)        # Remove samples with zero counts
@@ -158,11 +158,11 @@ rarefying = function(physeq = physeq,
     saveRDS(psdata_rarefied, file = output_file_path)
     log_message(paste("Phyloseq data fcm normalised cell concentration (cells per ml/gram sample) asv level rarefied saved as .rds object in", output_file_path), log_file)
 
-    return(list(psdata_asv_anna16_corrected = psdata, psdata_asv_fcm_norm_rarefied = psdata_rarefied))
+    return(list(psdata_asv_copy_number_corrected = psdata, psdata_asv_fcm_norm_rarefied = psdata_rarefied))
 
   } else if (norm_method == "qpcr") {
 
-    psdata_anna16 = physeq[["psdata_asv_anna16_corrected"]]
+    psdata_ccn = physeq[["psdata_asv_copy_number_corrected"]]
     psdata_qpcr = physeq[["psdata_asv_qpcr_norm"]]
 
     psdata_qpcr <- prune_samples(sample_sums(psdata_qpcr) > 0, psdata_qpcr)        # Remove samples with zero counts
@@ -227,7 +227,7 @@ rarefying = function(physeq = physeq,
     saveRDS(psdata_rarefied, file = output_file_path)
     log_message(paste("phyloseq qpcr normalised cell concentration (cells per ml/gram sample) asv level rarefied saved as .rds object in", output_file_path), log_file)
 
-    return(list(psdata_asv_anna16_corrected = psdata_anna16, psdata_asv_qpcr_norm_rarefied = psdata_rarefied))
+    return(list(psdata_asv_copy_number_corrected = psdata_ccn, psdata_asv_qpcr_norm_rarefied = psdata_rarefied))
 
   } else {
     log_message(paste("Error: Invalid normalization method specified. Use 'fcm' or 'qpcr'."), log_file)

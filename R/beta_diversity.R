@@ -150,10 +150,10 @@ beta_diversity <- function(physeq = physeq,
     if (is.null(norm_method)) {
       psdata_relative <- physeq
     } else if (norm_method == "fcm") {
-      psdata_relative <- physeq[["psdata_asv_anna16_corrected"]]
+      psdata_relative <- physeq[["psdata_asv_copy_number_corrected"]]
       psdata_absolute <- physeq[["psdata_asv_fcm_norm_rarefied"]]
     } else if (norm_method == "qpcr") {
-      psdata_relative <- physeq[["psdata_asv_anna16_corrected"]]
+      psdata_relative <- physeq[["psdata_asv_copy_number_corrected"]]
       psdata_absolute <- physeq[["psdata_asv_qpcr_norm_rarefied"]]
     }
 
@@ -327,10 +327,10 @@ beta_diversity <- function(physeq = physeq,
         psdata_relative <- physeq
         psdata_absolute <- NULL
       } else if (norm_method == "fcm") {
-        psdata_relative <- physeq[[paste0("psdata_anna16_corrected_", tax)]]
+        psdata_relative <- physeq[[paste0("psdata_copy_number_corrected_", tax)]]
         psdata_absolute <- physeq[[paste0("psdata_fcm_norm_rarefied_", tax)]]
       } else if (norm_method == "qpcr") {
-        psdata_relative <- physeq[[paste0("psdata_anna16_corrected_", tax)]]
+        psdata_relative <- physeq[[paste0("psdata_copy_number_corrected_", tax)]]
         psdata_absolute <- physeq[[paste0("psdata_qpcr_norm_rarefied_", tax)]]
       }
 

@@ -75,9 +75,9 @@ barplot = function(physeq = rarefied_genus_psmelt,
   project_name = projects
 
   if (is.null(norm_method)) {
-    anna16_corrected_data = physeq
+    copy_number_corrected_data = physeq
   } else if (norm_method == "fcm" || norm_method == "qpcr") {
-    anna16_corrected_data = physeq[[paste0("psmelt_anna16_corrected_", taxrank)]]
+    copy_number_corrected_data = physeq[[paste0("psmelt_copy_number_corrected_", taxrank)]]
   }
 
   project_folder = paste0(base_path, project_name)
@@ -110,14 +110,14 @@ barplot = function(physeq = rarefied_genus_psmelt,
     ntaxa = 23
   }
 
-  variable_columns = intersect(present_variable_factors, colnames(anna16_corrected_data))
+  variable_columns = intersect(present_variable_factors, colnames(copy_number_corrected_data))
   factor_columns = unique(c(variable_columns))
   present_factors = if (length(factor_columns) > 0) factor_columns else NULL
 
   # relatieve abudnatie onder 1% wordt geroepeerd onder "Others"
   genus_abund_rel =
-    anna16_corrected_data %>%
-    group_by(Sample, Kingdom, Phylum, Class, Order, Family, Genus, Tax_label, na_type, !!!syms(present_factors)) %>%
+    copy_number_corrected_data %>%
+    group_by(Sample, Kingdom, Phylum, Class, Order, Family, Tax_label, na_type, !!!syms(present_factors)) %>%
     summarise(abund = sum(Abundance), .groups = "drop") %>%
     group_by(Sample) %>%
     mutate(mean_rel_abund = abund/sum(abund) * 100) %>%
@@ -139,16 +139,16 @@ barplot = function(physeq = rarefied_genus_psmelt,
 
   genus_abund_wide_rel =
     genus_abund_rel %>%
-    select(Kingdom:Tax_label, Sample, mean_rel_abund) %>%
+    select(Kingdom, Phylum, Class, Order, Family, Tax_label, Sample, mean_rel_abund) %>%
     pivot_wider(names_from = Sample, values_from = mean_rel_abund, values_fill = 0) %>%
-    group_by_at(vars(Kingdom:Tax_label)) %>%
+    group_by_at(vars(Kingdom, Phylum, Class, Order, Family, Tax_label,)) %>%
     rowwise() %>%
     mutate(mean = mean(c_across(where(is.numeric)))) %>%
     arrange(desc(mean)) %>%
     select(-mean) %>%
     ungroup() %>%
     mutate(across(where(is.numeric), ~round(.x, digits = 2))) %>%
-    select(Kingdom:Genus, everything())
+    select(Kingdom, Phylum, Class, Order, Family, Tax_label, everything())
 
   output_file_path = paste0(output_folder_csv_files, project_name, "_barplot_relative_data.csv")
   write_csv(genus_abund_wide_rel, file = output_file_path, col_names = TRUE)
@@ -263,7 +263,7 @@ barplot = function(physeq = rarefied_genus_psmelt,
 
     genus_abund_norm =
       absolute_data %>%
-      group_by(Sample, Kingdom, Phylum, Class, Order, Family, Genus, Tax_label, na_type, !!!syms(present_factors)) %>%
+      group_by(Sample, Kingdom, Phylum, Class, Order, Family, Tax_label, na_type, !!!syms(present_factors)) %>%
       summarise(norm_abund = sum(Abundance), .groups = "drop") %>%
       group_by(Sample, Tax_label) %>%
       mutate(Tax_label = str_replace(Tax_label, "(.*)_unclassified", "Unclassified *\\1*")) %>%
@@ -275,16 +275,16 @@ barplot = function(physeq = rarefied_genus_psmelt,
 
     genus_abund_wide_norm =
       genus_abund_norm %>%
-      select(Kingdom:Tax_label, Sample, norm_abund) %>%
+      select(Kingdom, Phylum, Class, Order, Family, Tax_label, Sample, norm_abund) %>%
       pivot_wider(names_from = Sample, values_from = norm_abund, values_fill = 0) %>%
-      group_by_at(vars(Kingdom:Tax_label)) %>%
+      group_by_at(vars(Kingdom, Phylum, Class, Order, Family, Tax_label)) %>%
       rowwise() %>%
       mutate(mean = mean(c_across(where(is.numeric)))) %>%
       arrange(desc(mean)) %>%
       select(-mean) %>%
       ungroup() %>%
       mutate(across(where(is.numeric), ~round(.x, digits = 2))) %>%
-      select(Kingdom:Genus, everything())
+      select(Kingdom, Phylum, Class, Order, Family, Tax_label, everything())
 
     output_file_path = paste0(output_folder_csv_files, project_name, "_barplot_absolute_data.csv")
     write_csv(genus_abund_wide_norm, file = output_file_path, col_names = TRUE)

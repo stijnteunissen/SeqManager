@@ -13,7 +13,7 @@
 #'   \itemize{
 #'     \item \code{"fcm"}: Use flow cytometry-normalized data.
 #'     \item \code{"qpcr"}: Use qPCR-normalized data.
-#'     \item \code{NULL}: Use only Anna16-corrected data (default).
+#'     \item \code{NULL}: Use only copy number corrected data (default).
 #'   }
 #' @param taxrank A character vector specifying the taxonomic levels for which
 #'   alpha diversity is to be calculated. If the first element is (taxrank = `asv`),
@@ -129,7 +129,7 @@ alpha_diversity = function(physeq = physeq,
     log_message("Processing ASV-level alpha diversity", log_file)
 
     if (is.null(norm_method)) {
-      psdata = physeq[["psdata_asv_anna16_corrected"]]
+      psdata = physeq[["psdata_asv_copy_number_corrected"]]
     } else if (norm_method == "fcm") {
       psdata = physeq[["psdata_asv_fcm_norm_rarefied"]]
     } else if (norm_method == "qpcr") {

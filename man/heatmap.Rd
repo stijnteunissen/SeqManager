@@ -16,7 +16,7 @@ heatmap(
 
 \item{ntaxa}{An integer specifying the maximum number of taxa to display individually. Taxa below the threshold are grouped into "Other". If \code{NULL}, \code{ntaxa} is set to 23.}
 
-\item{norm_method}{A character string specifying the normalization method. If \code{NULL}, the function uses the provided \code{physeq} directly. If set to \code{"fcm"} or \code{"qpcr"}, the function extracts the corresponding \code{psmelt_anna16_corrected_} data based on the taxonomic rank.}
+\item{norm_method}{A character string specifying the normalization method. If \code{NULL}, the function uses the provided \code{physeq} directly. If set to \code{"fcm"} or \code{"qpcr"}, the function extracts the corresponding \code{psmelt_copy_number_corrected_} data based on the taxonomic rank.}
 
 \item{taxrank}{A character string indicating the taxonomic rank to use for grouping taxa. The default is \code{"Tax_label"}.}
 }

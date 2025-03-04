@@ -10,7 +10,10 @@ export_data()
 This function does not return a value. It performs file operations and creates a zip archive in the project folder.
 }
 \description{
-This function exports project-related figures and output data by creating a dedicated export folder within the project directory. It organizes the export folder into subdirectories for figures, CSV files, and RDS files, copies the relevant files from their original locations, and finally compresses the export folder into a zip archive.
+This function exports project-related figures and output data by creating a dedicated export folder
+within the project directory. It organizes the export folder into subdirectories for figures, CSV files,
+and RDS files, copies the relevant files from their original locations, and finally compresses the export
+folder into a zip archive containing only relative file paths.
 }
 \details{
 The function performs the following steps:

@@ -9,14 +9,14 @@ rarefying(physeq = physeq, norm_method = NULL, iteration = 100)
 \arguments{
 \item{physeq}{A list containing the \code{phyloseq} objects. Required components:
 \itemize{
-\item \code{psdata_asv_anna16_corrected}: With anna16 corrected phyloseq data.
+\item \code{psdata_asv_copy_number_corrected}: With copy number corrected phyloseq data.
 \item \code{psdata_asv_fcm_norm}: Required if \code{norm_method} = "fcm".
 \item \code{psdata_asv_qpcr_norm}: Required if \code{norm_method} = "qpcr".
 }}
 
 \item{norm_method}{A string specifying the normalization method. Acceptable values:
 \itemize{
-\item \code{NULL}: Returns the \code{psdata_asv_anna16_corrected} object without modifications.
+\item \code{NULL}: Returns the \code{psdata_asv_copy_number_corrected} object without modifications.
 \item \code{"fcm"}: Rarefied data using FCM normalized.
 \item \code{"qpcr"}: Rarefied data using qPCR normalized.
 }}
@@ -38,14 +38,14 @@ saved as \code{.rds} files for downstream analysis.
 \itemize{
 \item For \code{"fcm"} normalization:
 \itemize{
-\item Rarefies only the \code{fcm} normalized data, while the \verb{anna16 corrected} data remains unchanged.
+\item Rarefies only the \code{fcm} normalized data, while the \verb{copy number corrected} data remains unchanged.
 \item Rarefies based on the calculated sampling depth, derived from the ratio of total reads per sample to the
 estimated cell counts.
 \item Uses a custom function (\code{avgrarefy}) to perform multiple iterations of rarefaction and averages the results.
 }
 \item For \code{"qpcr"} normalization:
 \itemize{
-\item Rarefies only the \code{qpcr} normalized data, while the \verb{anna16 corrected} data remains unchanged.
+\item Rarefies only the \code{qpcr} normalized data, while the \verb{copy number corrected} data remains unchanged.
 \item Rarefies based on the calculated sampling depth, derived from the ratio of total reads per sample to
 predicted 16S rRNA gene copy numbers.
 \item Uses the same \code{avgrarefy} function for averaging rarefied counts.

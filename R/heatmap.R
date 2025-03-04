@@ -4,7 +4,7 @@
 #'
 #' @param physeq A phyloseq object containing normalized genus-level data. The default is \code{rarefied_genus_psmelt}.
 #' @param ntaxa An integer specifying the maximum number of taxa to display individually. Taxa below the threshold are grouped into "Other". If \code{NULL}, \code{ntaxa} is set to 23.
-#' @param norm_method A character string specifying the normalization method. If \code{NULL}, the function uses the provided \code{physeq} directly. If set to \code{"fcm"} or \code{"qpcr"}, the function extracts the corresponding \code{psmelt_anna16_corrected_} data based on the taxonomic rank.
+#' @param norm_method A character string specifying the normalization method. If \code{NULL}, the function uses the provided \code{physeq} directly. If set to \code{"fcm"} or \code{"qpcr"}, the function extracts the corresponding \code{psmelt_copy_number_corrected_} data based on the taxonomic rank.
 #' @param taxrank A character string indicating the taxonomic rank to use for grouping taxa. The default is \code{"Tax_label"}.
 #'
 #' @details
@@ -85,18 +85,18 @@ heatmap = function(physeq = rarefied_genus_psmelt,
   }
 
   if (is.null(norm_method)) {
-    anna16_corrected_data = physeq
+    copy_number_corrected_data = physeq
   } else if (norm_method == "fcm" || norm_method == "qpcr") {
-    anna16_corrected_data = physeq[[paste0("psmelt_anna16_corrected_", taxrank)]]
+    copy_number_corrected_data = physeq[[paste0("psmelt_copy_number_corrected_", taxrank)]]
   }
 
-  variable_columns = intersect(present_variable_factors, colnames(anna16_corrected_data))
+  variable_columns = intersect(present_variable_factors, colnames(copy_number_corrected_data))
   factor_columns = unique(c(variable_columns))
   present_factors = if (length(factor_columns) > 0) factor_columns else NULL
 
   # relatieve abudnatie onder 1% wordt geroepeerd onder "Others"
   genus_abund_rel =
-    anna16_corrected_data %>%
+    copy_number_corrected_data %>%
     group_by(Sample, Tax_label, na_type, !!!syms(present_factors)) %>% # Sample, Kingdom, Phylum, Class, Order, Family, Genus, Tax_label, na_type, !!!syms(present_factors)
     summarise(abund = sum(Abundance), .groups = "drop") %>%
     group_by(Sample) %>%

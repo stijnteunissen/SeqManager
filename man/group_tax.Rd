@@ -15,18 +15,25 @@ group_tax(
 
 \item{norm_method}{A character string specifying the normalization method. Options are:
 \itemize{
-\item \code{NULL} (default): Process Anna16-corrected counts only.
-\item \code{"fcm"}: Process both Anna16-corrected counts and flow cytometry-normalized data.
-\item \code{"qpcr"}: Process both Anna16-corrected counts and qPCR-normalized data.
+\item \code{NULL} (default): Process copy number corrected counts only.
+\item \code{"fcm"}: Process both copy number corrected counts and flow cytometry-normalized data.
+\item \code{"qpcr"}: Process both copy number corrected counts and qPCR-normalized data.
 }}
 
 \item{taxrank}{A character vector indicating the taxonomic levels at which to aggregate the data. The default is \code{c("Phylum", "Class", "Order", "Family", "Tax_label")}.}
 }
 \value{
-A list of aggregated phyloseq objects. The list elements are named according to the data type and taxonomic level (e.g., \code{"psdata_anna16_corrected_Phylum"}, \code{"psdata_fcm_norm_rarefied_Class"}, etc.).
+A list of aggregated phyloseq objects. The list elements are named
+according to the data type and taxonomic level (e.g.,
+\code{"psdata_copy_number_corrected_Phylum"},
+\code{"psdata_fcm_norm_rarefied_Class"}, etc.).
 }
 \description{
-This function aggregates a phyloseq object to higher taxonomic levels (e.g., Phylum, Class, Order, Family, or Tax_label) using the \code{tax_glom} function. Depending on the specified normalization method, the function processes and saves both Anna16-corrected data and normalized data (using flow cytometry or qPCR) as RDS files in dedicated directories.
+This function aggregates a phyloseq object to higher taxonomic levels (e.g.,
+Phylum, Class, Order, Family, or Tax_label) using the \code{tax_glom}
+function. Depending on the specified normalization method, the function
+processes and saves both copy number corrected data and normalized data (using
+flow cytometry or qPCR) as RDS files in dedicated directories.
 }
 \details{
 For each taxonomic level specified in \code{taxrank}, the function:
@@ -35,12 +42,12 @@ For each taxonomic level specified in \code{taxrank}, the function:
 \item Creates a subfolder (if it does not already exist) under the project's \code{After_cleaning_rds_files} directory.
 \item Aggregates the data at the specified taxonomic level using \code{tax_glom}.
 \item Saves the aggregated phyloseq object as an RDS file. The filename and folder structure reflect the taxonomic level and the normalization method used.
-\item If a normalization method is provided (\code{"fcm"} or \code{"qpcr"}), both the Anna16-corrected data and the corresponding normalized data are processed and saved.
+\item If a normalization method is provided (\code{"fcm"} or \code{"qpcr"}), both the copy number corrected data and the corresponding normalized data are processed and saved.
 }
 }
 \examples{
 \dontrun{
-  # Aggregate data at default taxonomic levels using only Anna16-corrected counts
+  # Aggregate data at default taxonomic levels using only copy number corrected counts
   result <- group_tax(physeq = rarefied_asv_physeq)
 
   # Aggregate data using flow cytometry normalization

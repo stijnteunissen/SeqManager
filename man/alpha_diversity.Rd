@@ -18,7 +18,7 @@ alpha_diversity(
 \itemize{
 \item \code{"fcm"}: Use flow cytometry-normalized data.
 \item \code{"qpcr"}: Use qPCR-normalized data.
-\item \code{NULL}: Use only Anna16-corrected data (default).
+\item \code{NULL}: Use only copy number corrected data (default).
 }}
 
 \item{taxrank}{A character vector specifying the taxonomic levels for which

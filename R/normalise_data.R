@@ -4,7 +4,7 @@
 #' conversion of data to absolute values based on either flow cytometry (FCM)
 #' data or qPCR data. The funciton accounts for DNA and RNA normalization,
 #' considering extra steps involved in prodessing RNA. Additionally, it
-#' incorporates Anna16 correction to adjust ASV counts based on predicted copy
+#' incorporates RasperGade16S correction to adjust ASV counts based on predicted copy
 #' numbers. The normalized data can later be used for relative abundance
 #' calculations.
 #'
@@ -14,15 +14,16 @@
 #'   \itemize{
 #'     \item `"fcm"`: Normalize based on flow cytometry data, converting abundances to cell concentrations (cells/mL or gram sample).
 #'     \item `"qpcr"`: Normalize based on qPCR data, converting abundances to cell equivalents (cells/ml or gram sample).
-#'     \item `NULL`: Apply only Anna16 correction without additional normalization.
+#'     \item `NULL`: Apply only copy number correction without additional normalization.
 #'   }
 #'
 #' @details
 #' The function performs the following steps based on the chosen normalization method:
 #'
-#' 1. **Anna16 Correction (applied in all cases):**
+#' 1. **Copy number correction (applied in all cases):**
 #'    - Correct ASV abundances by dividing each count by the predicted copy number. The predicted 16S rRNA gene copy numbers are
-#'    based on the method described in ["Deep learning for predicting 16S rRNA gene copy number"](https://dx.doi.org/10.1038/s41598-024-64658-5).
+#'      based on the method described in
+#'      ["Accounting for 16S rRNA copy number prediction uncertainty and its implications in bacterial diversity analyses"](https://dx.doi.org/10.1038/s43705-023-00266-0).
 #'    - This prediction enables the calculation of cell equivalents by adjusting for variablility in 16S rRNA gene copy numbers across taxa.
 #'
 #' 2. **FCM Normalization (`norm_method = "fcm"`):**
@@ -42,15 +43,14 @@
 #' When working with RNA data, ensure that metadata contains information about RNA extraction efficiency or other factors influencing RNA copy numbers.
 #'
 #' @references
-#' Miao J, Chen T, Misir M, Lin Y. Deep learning for predicting 16S rRNA gene
-#' copy number. Sci Rep. 2024 Jun 20;14(1):14282. doi:
-#' [10.1038/s41598-024-64658-5](https://dx.doi.org/10.1038/s41598-024-64658-5).
-#' PMID: 38902329; PMCID: PMC11190246.
+#' Gao, Y., & Wu, M. (2023). Accounting for 16S rRNA copy number prediction
+#' uncertainty and its implications in bacterial diversity analyses. ISME
+#' communications, 3(1), 59. doi:[10.1038/s43705-023-00266-0](https://dx.doi.org/10.1038/s43705-023-00266-0)
 #'
 #' @return
 #' A list containing one or more `phyloseq` objects:
 #'   \itemize{
-#'     \item `psdata_anna16_corrected`: Phyloseq object after Anna16 correction.
+#'     \item `psdata_copy_number_corrected`: Phyloseq object after copy number correction.
 #'     \item `psdata_fcm_norm`: (if `norm_method = "fcm"`) Phyloseq object with FCM-normalized cell concentrations.
 #'     \item `psdata_qpcr_norm`: (if `norm_method = "qpcr"`) Phyloseq object with qPCR-normalized cell equivalents.
 #'   }
@@ -58,7 +58,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Apply Anna16 correction only
+#' # Apply only copy number correction
 #' result <- normalize_data(physeq = physeq, norm_method = NULL)
 #'
 #' # Normalize using flow cytometry (FCM) data
@@ -77,51 +77,77 @@ normalise_data = function(physeq = without_mock_physeq,
 
   project_folder = paste0(base_path, project_name)
   destination_folder = paste0(project_folder, "/input_data/")
+  figure_folder = paste0(project_folder, "/figures/")
   output_folder_rds_files_before = paste0(project_folder, "/output_data/rds_files/Before_cleaning_rds_files/")
   output_folder_rds_files_after = paste0(project_folder, "/output_data/rds_files/After_cleaning_rds_files/")
   output_asv_rds_files = paste0(output_folder_rds_files_after, "ASV/")
   if(!dir.exists(output_asv_rds_files)){dir.create(output_asv_rds_files)}
 
-  # anna16 correctie
+  # raspergate
   df_psdata = data.frame(otu_table(psdata))
   df_psdata$OTU = rownames(df_psdata)
   pstibble =
     as_tibble(df_psdata) %>%
     select(OTU, everything())
 
-  anna16_file = list.files(destination_folder, pattern = "dna-sequences\\.csv$", full.names = TRUE)
-  anna16_data = read_csv(anna16_file, show_col_types = FALSE) %>% rename(index = "OTU")
+  rasperGade16S_file = list.files(destination_folder, pattern = "epa_result.jplace.prediction.RDS", full.names = TRUE)
+  rasperGade16S_rds = readRDS(rasperGade16S_file, show_col_types = FALSE)
+
+  raspergade_df = rasperGade16S_rds$discrete %>%
+    rename(OTU = label,
+           copy_number = x,
+           probability = probs) %>%
+    select(OTU, copy_number, probability) %>%
+    as_tibble()
 
   joined_pstibble =
     pstibble %>%
-    inner_join(., anna16_data, by = "OTU")
+    inner_join(., raspergade_df, by = "OTU")
 
   corrected_joined_pstibble =
     joined_pstibble %>%
     rowwise() %>%
-    mutate(across(c(everything(), -OTU, -predicted_copy_number), ~ . / predicted_copy_number)) %>%
-    mutate(across(c(everything(), -OTU, -predicted_copy_number), ~ ceiling(.))) %>%
-    select(-predicted_copy_number)
+    mutate(across(c(everything(), -OTU, -copy_number), ~ . / copy_number)) %>%
+    mutate(across(c(everything(), -OTU, -copy_number), ~ ceiling(.))) %>%
+    select(-copy_number)
 
   otu_corrected = otu_table(data.frame(corrected_joined_pstibble[, -1]), taxa_are_rows = TRUE)
   taxa_names(otu_corrected) = corrected_joined_pstibble$OTU
 
-  psdata_anna16_corrected = psdata
-  otu_table(psdata_anna16_corrected) = otu_corrected
+  psdata_copy_number_corrected = psdata
+  otu_table(psdata_copy_number_corrected) = otu_corrected
 
-  # output_file_path = paste0(output_folder_rds_files, project_name, "_phyloseq_asv_level_anna16_corrected_counts.rds")
-  # saveRDS(psdata_anna16_corrected, file = output_file_path)
-  # log_message(paste("Anna16 corrected phyloseq data saved as .rds object in", output_file_path), log_file)
-
-  # if (is.null(norm_method)) {
-  #   log_message("No normalization method specified for absolute data. Only anna16 correction applied.", log_file)
-  #   return(list(psdata_anna16_corrected = psdata_anna16_corrected))
-  # }
+  # # anna16 correctie
+  # df_psdata = data.frame(otu_table(psdata))
+  # df_psdata$OTU = rownames(df_psdata)
+  # pstibble =
+  #   as_tibble(df_psdata) %>%
+  #   select(OTU, everything())
+  #
+  # anna16_file = list.files(destination_folder, pattern = "dna-sequences\\.csv$", full.names = TRUE)
+  # anna16_data = read_csv(anna16_file, show_col_types = FALSE) %>% rename(index = "OTU")
+  #
+  # joined_pstibble =
+  #   pstibble %>%
+  #   inner_join(., anna16_data, by = "OTU")
+  #
+  # corrected_joined_pstibble =
+  #   joined_pstibble %>%
+  #   rowwise() %>%
+  #   mutate(across(c(everything(), -OTU, -predicted_copy_number), ~ . / predicted_copy_number)) %>%
+  #   mutate(across(c(everything(), -OTU, -predicted_copy_number), ~ ceiling(.))) %>%
+  #   select(-predicted_copy_number)
+  #
+  # otu_corrected = otu_table(data.frame(corrected_joined_pstibble[, -1]), taxa_are_rows = TRUE)
+  # taxa_names(otu_corrected) = corrected_joined_pstibble$OTU
+  #
+  # psdata_anna16_corrected = psdata
+  # otu_table(psdata_anna16_corrected) = otu_corrected
 
   # FCM normalisatie
   if (!is.null(norm_method) && norm_method == "fcm") {
 
-    df_psdata_fcm = data.frame(otu_table(psdata_anna16_corrected))
+    df_psdata_fcm = data.frame(otu_table(psdata_copy_number_corrected))
     df_psdata_fcm$OTU = rownames(df_psdata_fcm)
 
     psdata_fcm_long =
@@ -130,7 +156,7 @@ normalise_data = function(physeq = without_mock_physeq,
                    names_to = "SampleID",
                    values_to = "Abundance")
 
-    df_sample_data_fcm = data.frame(sample_data(psdata_anna16_corrected))
+    df_sample_data_fcm = data.frame(sample_data(psdata_copy_number_corrected))
     df_sample_data_fcm$SampleID = rownames(df_sample_data_fcm)
 
     joined_pstibble_fcm =
@@ -152,10 +178,8 @@ normalise_data = function(physeq = without_mock_physeq,
     otu_fcm_norm = otu_table(data.frame(fcm_norm_wide[, -1]), taxa_are_rows = TRUE)
     taxa_names(otu_fcm_norm) = fcm_norm_wide$OTU
 
-    psdata_fcm_norm = psdata_anna16_corrected
+    psdata_fcm_norm = psdata_copy_number_corrected
     otu_table(psdata_fcm_norm) = otu_fcm_norm
-
-    # return(list(psdata_anna16_corrected = psdata_anna16_corrected, psdata_fcm_norm = psdata_fcm_norm))
 
     # qpcr normalisatie
   } else if (!is.null(norm_method) && norm_method == "qpcr") {
@@ -176,10 +200,10 @@ normalise_data = function(physeq = without_mock_physeq,
       psdata_qpcr_long %>%
       inner_join(., df_sample_data_qpcr, by = "SampleID")
 
-    # Merge `predicted_copy_number` from Anna16 data
-    joined_pstibble_qpcr_anna16 =
+    # Merge `copy_number` from raspergade16s data
+    joined_pstibble_qpcr_copy_number =
       joined_pstibble_qpcr %>%
-      inner_join(., anna16_data %>% select(OTU, predicted_copy_number), by = "OTU")
+      inner_join(., raspergade_df %>% select(OTU, copy_number), by = "OTU")
 
     # cell equivlants abundance in plaats van relative
     # abdance is cell equivlants
@@ -187,9 +211,9 @@ normalise_data = function(physeq = without_mock_physeq,
 
     results_list = list()
 
-    if ("dna" %in% joined_pstibble_qpcr_anna16$na_type) {
+    if ("dna" %in% joined_pstibble_qpcr_copy_number$na_type) {
       joined_pstibble_qpcr_norm_dna =
-        joined_pstibble_qpcr_anna16 %>%
+        joined_pstibble_qpcr_copy_number %>%
         filter(na_type == "dna") %>%
         group_by(SampleID) %>%
         mutate(a = (sq_mean / insert_volume) * dilution_factor,
@@ -205,14 +229,12 @@ normalise_data = function(physeq = without_mock_physeq,
 
       original_sample_names <- sample_names(psdata)
       rownames(df_2) <- original_sample_names
-
       sample_data(psdata) = sample_data(df_2)
-
     }
 
-    if ("rna" %in% joined_pstibble_qpcr_anna16$na_type) {
+    if ("rna" %in% joined_pstibble_qpcr_copy_number$na_type) {
       joined_pstibble_qpcr_norm_rna =
-        joined_pstibble_qpcr_anna16 %>%
+        joined_pstibble_qpcr_copy_number %>%
         filter(na_type == "rna") %>%
         group_by(SampleID) %>%
         mutate(a = (sq_mean / insert_volume) * dilution_factor,
@@ -230,11 +252,10 @@ normalise_data = function(physeq = without_mock_physeq,
 
       original_sample_names <- sample_names(psdata)
       rownames(df_2) <- original_sample_names
-
       sample_data(psdata) = sample_data(df_2)
     }
 
-    if ("dna" %in% joined_pstibble_qpcr_anna16$na_type & "rna" %in% joined_pstibble_qpcr_anna16$na_type) {
+    if ("dna" %in% joined_pstibble_qpcr_copy_number$na_type & "rna" %in% joined_pstibble_qpcr_copy_number$na_type) {
       df = data.frame(sample_data(psdata))
       df_2 = df %>%
         mutate(sq_calc_mean = coalesce(sq_calc_mean.x, sq_calc_mean.y)) %>%
@@ -248,7 +269,7 @@ normalise_data = function(physeq = without_mock_physeq,
         group_by(SampleID) %>%
         mutate(relative_abundance = Abundance / sum(Abundance),
                absolute_abundance_qpcr = relative_abundance * sq_calc_mean,
-               norm_abund = ceiling(absolute_abundance_qpcr / predicted_copy_number)) %>%
+               norm_abund = ceiling(absolute_abundance_qpcr / copy_number)) %>%
         ungroup() %>%
         select(OTU, norm_abund, SampleID)
     } else if (!is.null(results_list$dna)) {
@@ -257,7 +278,7 @@ normalise_data = function(physeq = without_mock_physeq,
         group_by(SampleID) %>%
         mutate(relative_abundance = Abundance / sum(Abundance),
                absolute_abundance_qpcr = relative_abundance * sq_calc_mean,
-               norm_abund = ceiling(absolute_abundance_qpcr / predicted_copy_number)) %>%
+               norm_abund = ceiling(absolute_abundance_qpcr / copy_number)) %>%
         ungroup() %>%
         select(OTU, norm_abund, SampleID)
     } else if (!is.null(results_list$rna)) {
@@ -266,7 +287,7 @@ normalise_data = function(physeq = without_mock_physeq,
         group_by(SampleID) %>%
         mutate(relative_abundance = Abundance / sum(Abundance),
                absolute_abundance_qpcr = relative_abundance * sq_calc_mean,
-               norm_abund = ceiling(absolute_abundance_qpcr / predicted_copy_number)) %>%
+               norm_abund = ceiling(absolute_abundance_qpcr / copy_number)) %>%
         ungroup() %>%
         select(OTU, norm_abund, SampleID)
     }
@@ -278,10 +299,8 @@ normalise_data = function(physeq = without_mock_physeq,
 
     otu_qpcr_norm = otu_table(data.frame(qpcr_norm_wide[, -1]), taxa_are_rows = TRUE)
     taxa_names(otu_qpcr_norm) = qpcr_norm_wide$OTU
-
     psdata_qpcr_norm = psdata
     otu_table(psdata_qpcr_norm) = otu_qpcr_norm
-
   }
 
   # modify tax table
@@ -318,15 +337,15 @@ normalise_data = function(physeq = without_mock_physeq,
     return(psdata)
   }
 
-  psdata_anna16_corrected = modify_tax_table(psdata_anna16_corrected)
+  psdata_copy_number_corrected = modify_tax_table(psdata_copy_number_corrected)
 
-  output_file_path = paste0(output_asv_rds_files, project_name, "_phyloseq_asv_level_anna16_corrected_counts.rds")
-  saveRDS(psdata_anna16_corrected, file = output_file_path)
-  log_message(paste("phyloseq data anna16 corrected counts asv level saved as .rds object in", output_file_path), log_file)
+  output_file_path = paste0(output_asv_rds_files, project_name, "_phyloseq_asv_level_copy_number_corrected_counts.rds")
+  saveRDS(psdata_copy_number_corrected, file = output_file_path)
+  log_message(paste("phyloseq data copy number corrected counts asv level saved as .rds object in", output_file_path), log_file)
 
   if (is.null(norm_method)) {
-    log_message("No normalization method specified for absolute data. Only anna16 correction applied.", log_file)
-    return(list(psdata_asv_anna16_corrected = psdata_anna16_corrected))
+    log_message("No normalization method specified for absolute data. Only copy number correction applied.", log_file)
+    return(list(psdata_asv_copy_number_corrected = psdata_copy_number_corrected))
   }
 
   if (norm_method == "fcm") {
@@ -336,7 +355,7 @@ normalise_data = function(physeq = without_mock_physeq,
     saveRDS(psdata_fcm_norm, file = output_file_path)
     log_message(paste("Phyloseq data fcm normalised cell concentration (cells per ml/gram sample) asv level saved as .rds object in", output_file_path), log_file)
 
-    return(list(psdata_asv_anna16_corrected = psdata_anna16_corrected, psdata_asv_fcm_norm = psdata_fcm_norm))
+    return(list(psdata_asv_copy_number_corrected = psdata_copy_number_corrected, psdata_asv_fcm_norm = psdata_fcm_norm))
 
   } else if (norm_method == "qpcr") {
     psdata_qpcr_norm = modify_tax_table(psdata_qpcr_norm)
@@ -345,11 +364,48 @@ normalise_data = function(physeq = without_mock_physeq,
     saveRDS(psdata_qpcr_norm, file = output_file_path)
     log_message(paste("phyloseq qpcr normalised cell concentration (cells per ml/gram sample) asv level saved as .rds object in", output_file_path), log_file)
 
-    return(list(psdata_asv_anna16_corrected = psdata_anna16_corrected, psdata_asv_qpcr_norm = psdata_qpcr_norm))
+    return(list(psdata_asv_copy_number_corrected = psdata_copy_number_corrected, psdata_asv_qpcr_norm = psdata_qpcr_norm))
 
   } else {
     log_message("Error: Invalid normalization method specified. Use 'fcm' or 'qpcr'.")
     stop("Error: Invalid normalization method specified. Use 'fcm' or 'qpcr'.")
   }
 
+  #  # database folder toeveogen
+  rrndb_database_tsv = read_tsv("Databases/rrnDB-5.9_pantaxa_stats_NCBI.tsv")
+  rrndb_database = rrndb_database_tsv %>% filter(rank == "genus") %>% select(Genus = "name", everything())
+
+  psmelt = psdata %>% psmelt() %>% as_tibble()
+  psmelt = psmelt %>% select(OTU, Genus)
+
+  proj_tabel = left_join(psmelt, raspergade_df, by = "OTU")
+  final_tabel = left_join(proj_tabel, rrndb_database, by = "Genus")
+
+  plot_data = final_tabel %>%
+    select(OTU, Genus, mean, copy_number, probability) %>%
+    filter(!is.na(mean) & !is.na(copy_number)) %>%
+    mutate(probability_rate = case_when(
+      probability > 0.9 ~ "High (> 0.9)",
+      probability >= 0.5 & probability <= 0.9 ~ "Medium (>= 0.5 & <= 0.9)",
+      probability < 0.5 ~ "Low (< 0.5)"))
+
+  copy_number_comparison =
+    ggplot(plot_data, aes(x = mean, y = copy_number, color = probability_rate)) +
+    geom_point(aes(color = probability_rate), size = 1) +
+    geom_smooth(method = "lm", se = FALSE, color = "black", aes(group = 1)) +
+    geom_abline(intercept = 0, slope = 1, color = "red") +
+    scale_color_manual(values = c("High (> 0.9)" = "darkgreen", "Medium (>= 0.5 & <= 0.9)" = "orange", "Low (< 0.5)" = "red4")) +
+    #facet_wrap(~ probability_rate) +
+    xlim(0, 15) +
+    ylim(0, 15) +
+    theme_bw() +
+    labs(
+      title = "OTU copy number comparison",
+      x = "mean reference rrnDB",
+      y = "Predicted copy number",
+      color = "Probability rate")
+
+  figure_file_path = paste0(figure_folder, project_name, "_copy_number_comparison.pdf")
+  ggsave(filename = figure_file_path, plot = copy_number_comparison, width = 14, height = 7)
+  log_message(paste("Copy number comparison saved as .pdf object in", figure_file_path), log_file)
 }

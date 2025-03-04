@@ -14,13 +14,13 @@ This is the input object that the function processes.}
 \itemize{
 \item \code{"fcm"}: Normalize based on flow cytometry data, converting abundances to cell concentrations (cells/mL or gram sample).
 \item \code{"qpcr"}: Normalize based on qPCR data, converting abundances to cell equivalents (cells/ml or gram sample).
-\item \code{NULL}: Apply only Anna16 correction without additional normalization.
+\item \code{NULL}: Apply only copy number correction without additional normalization.
 }}
 }
 \value{
 A list containing one or more \code{phyloseq} objects:
 \itemize{
-\item \code{psdata_anna16_corrected}: Phyloseq object after Anna16 correction.
+\item \code{psdata_copy_number_corrected}: Phyloseq object after copy number correction.
 \item \code{psdata_fcm_norm}: (if \code{norm_method = "fcm"}) Phyloseq object with FCM-normalized cell concentrations.
 \item \code{psdata_qpcr_norm}: (if \code{norm_method = "qpcr"}) Phyloseq object with qPCR-normalized cell equivalents.
 }
@@ -31,22 +31,23 @@ This function applies normalization to a \code{phyloseq} object, allowing the
 conversion of data to absolute values based on either flow cytometry (FCM)
 data or qPCR data. The funciton accounts for DNA and RNA normalization,
 considering extra steps involved in prodessing RNA. Additionally, it
-incorporates Anna16 correction to adjust ASV counts based on predicted copy
+incorporates RasperGade16S correction to adjust ASV counts based on predicted copy
 numbers. The normalized data can later be used for relative abundance
 calculations.
 }
 \details{
 The function performs the following steps based on the chosen normalization method:
 \enumerate{
-\item \strong{Anna16 Correction (applied in all cases):}
+\item \strong{Copy number correction (applied in all cases):}
 \itemize{
 \item Correct ASV abundances by dividing each count by the predicted copy number. The predicted 16S rRNA gene copy numbers are
-based on the method described in \href{https://dx.doi.org/10.1038/s41598-024-64658-5}{"Deep learning for predicting 16S rRNA gene copy number"}.
+based on the method described in
+\href{https://dx.doi.org/10.1038/s43705-023-00266-0}{"Accounting for 16S rRNA copy number prediction uncertainty and its implications in bacterial diversity analyses"}.
 \item This prediction enables the calculation of cell equivalents by adjusting for variablility in 16S rRNA gene copy numbers across taxa.
 }
 \item \strong{FCM Normalization (\code{norm_method = "fcm"}):}
 \itemize{
-\item Combine sample metadata (e.g., \code{cells_per_ml}, \code{sample_volume_ml}) with corrected abundances.
+\item Combine sample metadata (e.g., \code{cells_per_ml}) with corrected abundances.
 \item Calculate absolute abundances as \code{cells_per_ml_sample} and adjust ASV abundances accordingly.
 }
 \item \strong{qPCR Normalization (\code{norm_method = "qpcr"}):}
@@ -69,7 +70,7 @@ When working with RNA data, ensure that metadata contains information about RNA 
 }
 \examples{
 \dontrun{
-# Apply Anna16 correction only
+# Apply only copy number correction
 result <- normalize_data(physeq = physeq, norm_method = NULL)
 
 # Normalize using flow cytometry (FCM) data
@@ -81,8 +82,7 @@ result <- normalize_data(physeq = physeq, norm_method = "qpcr")
 
 }
 \references{
-Miao J, Chen T, Misir M, Lin Y. Deep learning for predicting 16S rRNA gene
-copy number. Sci Rep. 2024 Jun 20;14(1):14282. doi:
-\href{https://dx.doi.org/10.1038/s41598-024-64658-5}{10.1038/s41598-024-64658-5}.
-PMID: 38902329; PMCID: PMC11190246.
+Gao, Y., & Wu, M. (2023). Accounting for 16S rRNA copy number prediction
+uncertainty and its implications in bacterial diversity analyses. ISME
+communications, 3(1), 59. doi:\href{https://dx.doi.org/10.1038/s43705-023-00266-0}{10.1038/s43705-023-00266-0}
 }
